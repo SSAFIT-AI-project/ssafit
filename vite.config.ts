@@ -3,8 +3,8 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  // GitHub Pages 배포를 위한 base 경로 (저장소 이름에 맞게 수정)
-  base: '/vue/',
+  // Vercel 배포를 위한 base 경로 (루트 경로 사용)
+  base: '/',
   server: {
     port: 3000
   }

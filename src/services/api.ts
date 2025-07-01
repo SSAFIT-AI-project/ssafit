@@ -55,8 +55,8 @@ export interface ChatbotResponsesResponse {
   }
 }
 
-// API 기본 설정 - 환경 변수에서 가져오기
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const ASK_API_URL = 'http://13.209.64.155/ask'
 
 // 환경 변수 로깅 (개발 환경에서만)
 if (import.meta.env.DEV) {
@@ -72,7 +72,7 @@ const handleApiError = (error: any): never => {
 
 // API 호출 함수들
 export const apiService = {
-  // 카드 목록 조회
+  // 카드 목록 조회 (더미)
   async getCards(): Promise<CardsResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/cards.json`)
@@ -80,17 +80,14 @@ export const apiService = {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data: ApiResponse<CardsResponse> = await response.json()
-      
-      // 실제 API처럼 약간의 지연 추가
       await new Promise(resolve => setTimeout(resolve, 300))
-      
       return data.data
     } catch (error) {
       handleApiError(error)
     }
   },
 
-  // 인기 카드 조회
+  // 인기 카드 조회 (더미)
   async getPopularCards(): Promise<PopularCard[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/popular-cards.json`)
@@ -98,17 +95,14 @@ export const apiService = {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data: ApiResponse<PopularCardsResponse> = await response.json()
-      
-      // 실제 API처럼 약간의 지연 추가
       await new Promise(resolve => setTimeout(resolve, 200))
-      
       return data.data.popularCards
     } catch (error) {
       handleApiError(error)
     }
   },
 
-  // 카드 상세 정보 조회
+  // 카드 상세 정보 조회 (더미)
   async getCardById(id: number): Promise<Card> {
     try {
       const response = await fetch(`${API_BASE_URL}/cards.json`)
@@ -116,40 +110,60 @@ export const apiService = {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data: ApiResponse<CardsResponse> = await response.json()
-      
-      // 실제 API처럼 약간의 지연 추가
       await new Promise(resolve => setTimeout(resolve, 150))
-      
       const card = data.data.cards.find(card => card.id === id)
       if (!card) {
         throw new Error('카드를 찾을 수 없습니다.')
       }
-      
       return card
     } catch (error) {
       handleApiError(error)
     }
   },
 
-  // 챗봇 응답 조회
-  async getChatbotResponse(type: string): Promise<ChatbotResponse> {
+  // 챗봇 응답 조회 (더미)
+  async getChatbotResponseDummy(type: string): Promise<ChatbotResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/chatbot-responses.json`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data: ApiResponse<ChatbotResponsesResponse> = await response.json()
-      
-      // 실제 API처럼 약간의 지연 추가 (챗봇은 더 느리게)
       await new Promise(resolve => setTimeout(resolve, 800))
-      
       return data.data.responses[type] || data.data.responses.unknown
     } catch (error) {
       handleApiError(error)
     }
   },
 
-  // 카드 검색 (필터링)
+  // 실제 AI 챗봇 질문 (서버)
+  async getChatbotResponse(question: string): Promise<ChatbotResponse> {
+    try {
+      const response = await fetch(ASK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json'
+        },
+        body: JSON.stringify({ question })
+      })
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+      const data = await response.json()
+      return {
+        message: data.answer,
+        suggestions: [
+          "연회비가 낮은 카드 추천해줘",
+          "주유 할인 카드 추천해줘",
+          "대중교통 할인 카드 추천해줘",
+          "온라인 쇼핑 할인 카드 추천해줘"
+        ]
+      }
+    } catch (error) {
+      handleApiError(error)
+    }
+  },
+
+  // 카드 검색 (더미)
   async searchCards(params: {
     category?: string
     annualFee?: string
@@ -161,18 +175,11 @@ export const apiService = {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data: ApiResponse<CardsResponse> = await response.json()
-      
-      // 실제 API처럼 약간의 지연 추가
       await new Promise(resolve => setTimeout(resolve, 400))
-      
       let filteredCards = [...data.data.cards]
-      
-      // 카테고리 필터링
       if (params.category) {
         filteredCards = filteredCards.filter(card => card.category === params.category)
       }
-      
-      // 연회비 필터링
       if (params.annualFee) {
         switch (params.annualFee) {
           case '0':
@@ -186,8 +193,6 @@ export const apiService = {
             break
         }
       }
-      
-      // 정렬
       if (params.sortBy) {
         switch (params.sortBy) {
           case 'name':
@@ -201,7 +206,6 @@ export const apiService = {
             break
         }
       }
-      
       return filteredCards
     } catch (error) {
       handleApiError(error)

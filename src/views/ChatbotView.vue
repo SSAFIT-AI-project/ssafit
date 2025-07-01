@@ -32,7 +32,7 @@
             <div class="message-content">
               <div v-if="message.type === 'bot'" class="message-avatar">🤖</div>
               <div class="message-bubble">
-                <p class="message-text">{{ message.text }}</p>
+                <p class="message-text" v-html="formatMessage(message.text)"></p>
                 
                 <!-- 추천 카드 -->
                 <div v-if="message.recommendations && message.recommendations.length > 0" class="recommendations">
@@ -118,6 +118,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { apiService, type ChatbotResponse } from '../services/api'
+import { marked } from 'marked'
 
 interface Message {
   type: 'user' | 'bot'
@@ -179,27 +180,8 @@ const processBotResponse = async (userMessage: string) => {
   await scrollToBottom()
 
   try {
-    // 메시지 타입 결정
-    let responseType = 'unknown'
-    
-    if (userMessage.includes('일상생활') || userMessage.includes('일상')) {
-      responseType = 'daily_life'
-    } else if (userMessage.includes('교통') || userMessage.includes('교통비')) {
-      responseType = 'transportation'
-    } else if (userMessage.includes('쇼핑')) {
-      responseType = 'shopping'
-    } else if (userMessage.includes('여행')) {
-      responseType = 'travel'
-    } else if (userMessage.includes('엔터테인먼트') || userMessage.includes('문화')) {
-      responseType = 'entertainment'
-    } else if (userMessage.includes('프리미엄') || userMessage.includes('고급')) {
-      responseType = 'premium'
-    } else if (userMessage.includes('안녕') || userMessage.includes('시작')) {
-      responseType = 'greeting'
-    }
-
-    // API 호출
-    const response: ChatbotResponse = await apiService.getChatbotResponse(responseType)
+    // API 호출 - 사용자 메시지를 직접 전달
+    const response: ChatbotResponse = await apiService.getChatbotResponse(userMessage)
 
     // 봇 메시지 추가
     messages.value.push({
@@ -235,8 +217,21 @@ watch(messages, () => {
 
 // 초기 메시지
 onMounted(async () => {
-  await processBotResponse('안녕하세요')
+  messages.value.push({
+    type: 'bot',
+    text: '안녕하세요! 카드 추천을 도와드릴게요. 어떤 카드를 찾고 계신가요?',
+    suggestions: [
+      '연회비가 낮은 카드 추천해줘',
+      '주유 할인 카드 추천해줘',
+      '대중교통 할인 카드 추천해줘',
+      '온라인 쇼핑 할인 카드 추천해줘'
+    ]
+  })
 })
+
+function formatMessage(text: string) {
+  return marked.parse(text)
+}
 </script>
 
 <style scoped>
@@ -353,8 +348,53 @@ onMounted(async () => {
 }
 
 .message-text {
-  margin-bottom: var(--spacing-md);
-  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-line;
+  overflow-x: auto;
+  max-width: 100%;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.message-text ul,
+.message-text ol {
+  margin: 0.5em 0 0.5em 1.5em;
+  padding-left: 1.2em;
+}
+
+.message-text li {
+  margin-bottom: 0.3em;
+  word-break: break-word;
+}
+
+.message-text strong {
+  font-weight: bold;
+}
+.message-text em {
+  font-style: italic;
+}
+
+.message-text pre,
+.message-text code {
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  font-size: 0.95em;
+  color: #1e293b;
+  overflow-x: auto;
+}
+
+.message-text table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+.message-text th,
+.message-text td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5em 1em;
+  text-align: left;
 }
 
 .recommendations {
