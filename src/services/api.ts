@@ -56,7 +56,7 @@ export interface ChatbotResponsesResponse {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-const ASK_API_URL = 'https://13.209.64.155/ask'
+const ASK_API_URL = 'http://13.209.64.155/ask'
 
 // 환경 변수 로깅 (개발 환경에서만)
 if (import.meta.env.DEV) {
