@@ -55,14 +55,10 @@ export interface ChatbotResponsesResponse {
   }
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-const ASK_API_URL = 'http://13.209.64.155/ask'
+const API_BASE_URL = 'http://13.209.64.155:8000/'
+const ASK_API_URL = 'http://13.209.64.155:8000/ask'
 
-// 환경 변수 로깅 (개발 환경에서만)
-if (import.meta.env.DEV) {
-  console.log('API Base URL:', API_BASE_URL)
-  console.log('Environment:', import.meta.env.MODE)
-}
+
 
 // 에러 처리 함수
 const handleApiError = (error: any): never => {
@@ -72,31 +68,27 @@ const handleApiError = (error: any): never => {
 
 // API 호출 함수들
 export const apiService = {
-  // 카드 목록 조회 (더미)
-  async getCards(): Promise<CardsResponse> {
+  // 카드 목록 조회 (백엔드)
+  async getCards() {
     try {
-      const response = await fetch(`${API_BASE_URL}/cards.json`)
+      const response = await fetch(`${API_BASE_URL}/cards`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      const data: ApiResponse<CardsResponse> = await response.json()
-      await new Promise(resolve => setTimeout(resolve, 300))
-      return data.data
+      return await response.json()
     } catch (error) {
       handleApiError(error)
     }
   },
 
-  // 인기 카드 조회 (더미)
-  async getPopularCards(): Promise<PopularCard[]> {
+  // 인기 카드 조회 (백엔드)
+  async getPopularCards() {
     try {
-      const response = await fetch(`${API_BASE_URL}/popular-cards.json`)
+      const response = await fetch(`${API_BASE_URL}/popular-cards`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      const data: ApiResponse<PopularCardsResponse> = await response.json()
-      await new Promise(resolve => setTimeout(resolve, 200))
-      return data.data.popularCards
+      return await response.json()
     } catch (error) {
       handleApiError(error)
     }
