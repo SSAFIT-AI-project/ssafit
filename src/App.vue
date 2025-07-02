@@ -4,8 +4,7 @@
       <div class="container">
         <div class="nav-content">
           <router-link to="/" class="nav-logo">
-            <div class="logo-icon">💳</div>
-            <span class="logo-text">카드비교</span>
+            <img src="/logo.png" alt="SSAFIT 로고" class="logo-img" />
           </router-link>
           <div class="nav-links">
             <router-link to="/" class="nav-link">홈</router-link>
@@ -25,7 +24,7 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-section">
-            <h3 class="footer-title">카드비교 서비스</h3>
+            <h3 class="footer-title">SSAFIT</h3>
             <p class="footer-description">
               최적의 카드를 찾아드리는 스마트한 비교 서비스
             </p>
@@ -48,7 +47,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; 2024 카드비교 서비스. All rights reserved.</p>
+          <p>&copy; 2024 SSAFIT. All rights reserved.</p>
         </div>
       </div>
     </footer>
@@ -86,8 +85,12 @@
   font-size: 1.25rem;
 }
 
-.logo-icon {
-  font-size: 1.5rem;
+.logo-img {
+  height: 3.5rem;
+  width: auto;
+  margin-right: 0;
+  vertical-align: middle;
+  display: inline-block;
 }
 
 .logo-text {

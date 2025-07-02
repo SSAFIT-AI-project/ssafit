@@ -5,8 +5,8 @@
       <div class="container">
         <div class="hero-content">
           <h1 class="hero-title">
-            최적의 카드를 찾는<br>
-            <span class="highlight">스마트한 방법</span>
+            싸피생에게 <span class="highlight">FIT</span>한 카드<br>
+            <span class="highlight">당신만을 위한 선택</span>
           </h1>
           <p class="hero-description">
             AI 챗봇이 당신의 소비 패턴을 분석하여 가장 적합한 카드를 추천해드립니다.
@@ -39,7 +39,7 @@
     <!-- 특징 섹션 -->
     <section class="features">
       <div class="container">
-        <h2 class="section-title text-center">왜 카드비교 서비스를 선택해야 할까요?</h2>
+        <h2 class="section-title text-center">왜 SSAFIT을 선택해야 할까요?</h2>
         <div class="grid grid-cols-3">
           <div class="feature-card card p-4">
             <div class="feature-icon">🤖</div>

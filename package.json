@@ -1,7 +1,7 @@
 {
-  "name": "card-comparison-site",
+  "name": "ssafit",
   "version": "1.0.0",
-  "description": "카드 비교 및 챗봇 추천 사이트",
+  "description": "SSAFIT - 카드 비교 및 AI 추천 서비스",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import CardsView from '../views/CardsView.vue'
 import CompareView from '../views/CompareView.vue'
 import ChatbotView from '../views/ChatbotView.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory('/ssafy-13th-ai-gumi-2/'),
   routes: [
     {
       path: '/',
