@@ -15,10 +15,11 @@
 - 카드 상세 정보 모달
 - 비교하기 기능
 
-### 3. 카드 비교
-- 최대 3개 카드 동시 비교
-- 기본 정보, 혜택 비교 테이블
-- AI 추천 결과 표시
+### 3. 카드 비교 ⚠️
+- **현재 상태**: UI만 구현되어 있으며, 실제 비교 기능은 미구현 상태
+- 최대 3개 카드 동시 비교 인터페이스
+- 기본 정보, 혜택 비교 테이블 레이아웃
+- AI 추천 결과 표시 영역
 - 직관적인 비교 인터페이스
 
 ### 4. AI 챗봇 추천
@@ -44,20 +45,12 @@
 - **API**: Fetch API (더미 JSON 데이터)
 - **Environment**: Vite 환경 변수
 
-## 📦 설치 및 실행
+## 📦 로컬 설치 및 실행
 
-### 1. 환경 변수 설정
-프로젝트 루트에 환경 변수 파일을 생성하세요:
-
+### 1. 프로젝트 클론
 ```bash
-# 기본 환경 변수 (env.example을 복사)
-cp env.example .env
-
-# 개발 환경 (선택사항)
-cp env.development.example .env.development
-
-# 프로덕션 환경 (선택사항)
-cp env.production.example .env.production
+git clone https://github.com/your-username/ssafit.git
+cd ssafit
 ```
 
 ### 2. 의존성 설치
@@ -70,19 +63,98 @@ npm install
 npm run dev
 ```
 
+개발 서버가 실행되면 브라우저에서 `http://localhost:3000`으로 접속할 수 있습니다.
+
 ### 4. 빌드
 ```bash
 npm run build
 ```
 
-### 5. 미리보기
+### 5. 빌드 결과 미리보기
 ```bash
 npm run preview
 ```
 
+## 🚀 GitHub Pages 배포
+
+### 1. 자동 배포 설정 (추천)
+
+#### GitHub Actions 워크플로우 생성
+프로젝트 루트에 `.github/workflows/deploy.yml` 파일을 생성하세요:
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build
+      run: npm run build
+      
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+```
+
+#### GitHub 저장소 설정
+1. GitHub 저장소에서 **Settings** 탭으로 이동
+2. 왼쪽 메뉴에서 **Pages** 클릭
+3. **Source** 섹션에서 **Deploy from a branch** 선택
+4. **Branch**를 `gh-pages`로 설정하고 **Save** 클릭
+
+### 2. 수동 배포
+
+#### 빌드 및 배포
+```bash
+# 프로젝트 빌드
+npm run build
+
+# gh-pages 브랜치 생성 및 배포 (package.json에 deploy 스크립트 포함)
+npm run deploy
+```
+
+또는 gh-pages 패키지를 직접 사용:
+```bash
+npm install -g gh-pages
+gh-pages -d dist
+```
+
+#### GitHub 저장소 설정
+1. GitHub 저장소에서 **Settings** → **Pages** 이동
+2. **Source**를 **Deploy from a branch**로 설정
+3. **Branch**를 `gh-pages`로 설정
+
+### 3. 배포 확인
+배포가 완료되면 `https://your-username.github.io/ssafit`에서 접속할 수 있습니다.
+
 ## 🔧 환경 변수 설정
 
 ### 기본 환경 변수
+프로젝트 루트에 `.env` 파일을 생성하세요:
+
 ```bash
 # API 설정
 VITE_API_BASE_URL=/api
@@ -92,26 +164,27 @@ VITE_APP_TITLE=카드 비교 및 추천 서비스
 VITE_APP_DESCRIPTION=삼성전자 브랜드 색상을 활용한 카드 비교 및 AI 추천 웹사이트
 ```
 
-### 환경별 설정
+### GitHub Pages 배포용 환경 변수
+GitHub Pages에서는 상대 경로를 사용하므로 `VITE_API_BASE_URL`을 다음과 같이 설정하세요:
 
-#### 개발 환경 (`.env.development`)
 ```bash
-VITE_API_BASE_URL=/api
-# 또는 로컬 백엔드 서버
-# VITE_API_BASE_URL=http://localhost:3000/api
+# GitHub Pages 배포용
+VITE_API_BASE_URL=/ssafit/api
 ```
 
-#### 프로덕션 환경 (`.env.production`)
-```bash
-VITE_API_BASE_URL=https://api.example.com/api
-VITE_APP_TITLE=카드 비교 및 추천 서비스
-```
+### Vite 설정
+`vite.config.ts`에서 GitHub Pages 배포를 위한 base 경로가 설정되어 있습니다:
 
-### 환경 변수 우선순위
-1. `.env.local` (로컬 개발용, git에 커밋되지 않음)
-2. `.env.development` (개발 환경)
-3. `.env.production` (프로덕션 환경)
-4. `.env` (기본값)
+```typescript
+export default defineConfig({
+  plugins: [vue()],
+  // GitHub Pages 배포를 위한 base 경로
+  base: '/ssafit/',
+  server: {
+    port: 3000
+  }
+})
+```
 
 ## 📁 프로젝트 구조
 
@@ -120,7 +193,7 @@ src/
 ├── views/           # 페이지 컴포넌트
 │   ├── HomeView.vue      # 홈페이지
 │   ├── CardsView.vue     # 카드 목록
-│   ├── CompareView.vue   # 카드 비교
+│   ├── CompareView.vue   # 카드 비교 (UI만 구현)
 │   └── ChatbotView.vue   # AI 챗봇
 ├── services/        # API 서비스
 │   └── api.ts            # API 호출 및 타입 정의
@@ -129,19 +202,11 @@ src/
 ├── main.ts          # 앱 진입점
 └── style.css        # 글로벌 스타일
 
-# 루트 파일들
-env.d.ts                 # Vue 컴포넌트 및 환경 변수 타입 정의
-
 public/
 └── api/             # 더미 API 데이터
     ├── cards.json           # 카드 목록 데이터
     ├── popular-cards.json   # 인기 카드 데이터
     └── chatbot-responses.json # 챗봇 응답 데이터
-
-# 환경 변수 파일들
-env.example              # 기본 환경 변수 예시
-env.development.example  # 개발 환경 예시
-env.production.example   # 프로덕션 환경 예시
 ```
 
 ## 🔌 API 서비스 구조
@@ -190,9 +255,6 @@ env.production.example   # 프로덕션 환경 예시
 - **실제 API 호출 시뮬레이션**: fetch API를 사용하여 더미 JSON 파일 호출
 - **로딩 상태 관리**: 각 API 호출에 대한 로딩 스피너 제공
 - **에러 처리**: 네트워크 오류 및 데이터 로딩 실패 처리
-- **타입 안전성**: TypeScript 인터페이스를 통한 타입 정의
-- **지연 시뮬레이션**: 실제 API처럼 약간의 지연 시간 추가
-- **환경 변수 지원**: `VITE_API_BASE_URL`을 통한 API 엔드포인트 설정
 
 ### 주요 API 함수
 - `getCards()`: 전체 카드 목록 조회
@@ -214,10 +276,11 @@ env.production.example   # 프로덕션 환경 예시
 - 카드 상세 정보 모달
 - 로딩 상태 및 에러 처리
 
-### 카드 비교 (/compare)
-- 선택한 카드들의 상세 비교
-- 비교 테이블 형태로 정보 제공
-- AI 추천 결과 표시
+### 카드 비교 (/compare) ⚠️
+- **현재 상태**: UI 레이아웃만 구현되어 있음
+- 선택한 카드들의 상세 비교 인터페이스
+- 비교 테이블 형태로 정보 제공 영역
+- AI 추천 결과 표시 영역
 - 카드 선택 모달
 
 ### AI 추천 (/chatbot)
@@ -261,19 +324,9 @@ env.production.example   # 프로덕션 환경 예시
 ### 챗봇 응답 수정
 `public/api/chatbot-responses.json` 파일에서 챗봇의 응답을 수정할 수 있습니다.
 
-### API 엔드포인트 변경
-실제 백엔드 API로 전환할 때는 환경 변수 파일에서 `VITE_API_BASE_URL`을 수정하면 됩니다:
-
-```bash
-# 개발 환경
-VITE_API_BASE_URL=http://localhost:3000/api
-
-# 프로덕션 환경
-VITE_API_BASE_URL=https://api.example.com/api
-```
-
 ## 🚀 향후 개선 사항
 
+- [ ] 카드 비교 기능 실제 구현
 - [ ] 실제 백엔드 API 연동
 - [ ] 사용자 인증 시스템
 - [ ] 카드 신청 기능
@@ -295,87 +348,4 @@ VITE_API_BASE_URL=https://api.example.com/api
 
 ## 📞 문의
 
-프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.
-
-## 🚀 배포 가이드
-
-### 1. **GitHub Pages 배포 (추천 - 무료)**
-
-#### 자동 배포 설정
-1. GitHub 저장소에서 **Settings** → **Pages** 이동
-2. **Source**를 **GitHub Actions**로 설정
-3. `main` 브랜치에 푸시하면 자동으로 배포됨
-
-#### 수동 배포
-```bash
-# 프로젝트 빌드
-npm run build
-
-# dist 폴더의 내용을 GitHub Pages에 업로드
-# 또는 GitHub Actions가 자동으로 처리
-```
-
-### 2. **Netlify 배포**
-
-```bash
-# Netlify CLI 설치
-npm install -g netlify-cli
-
-# 로그인
-netlify login
-
-# 프로젝트 빌드
-npm run build
-
-# 배포
-netlify deploy --prod --dir=dist
-```
-
-### 3. **Vercel 배포**
-
-```bash
-# Vercel CLI 설치
-npm install -g vercel
-
-# 로그인 (브라우저에서 인증)
-vercel login
-
-# 프로젝트 빌드
-npm run build
-
-# 배포
-vercel --prod
-```
-
-### 4. **서버 배포**
-
-#### Nginx 설정
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    root /path/to/your-project/dist;
-    index index.html;
-    
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-    
-    location /api {
-        proxy_pass http://localhost:3000;
-    }
-}
-```
-
-### 5. **환경 변수 설정**
-
-배포 시 환경 변수를 설정해야 합니다:
-
-#### GitHub Pages
-- 환경 변수는 빌드 시점에 포함되므로 `.env.production` 파일 사용
-
-#### Netlify/Vercel
-- 대시보드에서 환경 변수 설정
-- `VITE_API_BASE_URL` 설정 필요
-
-## 📦 설치 및 실행 
+프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요. 
