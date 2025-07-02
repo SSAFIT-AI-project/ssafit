@@ -196,7 +196,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { apiService, type Card } from '../services/api'
 
 interface ComparisonSlot {
@@ -267,9 +267,10 @@ const loadCards = async () => {
   
   try {
     const response = await apiService.getCards()
-    cards.value = response.cards
+    cards.value = (response && response.data && response.data.cards) ? response.data.cards : []
   } catch (err) {
     error.value = '카드 정보를 불러오는데 실패했습니다.'
+    cards.value = []
     console.error('Failed to load cards:', err)
   } finally {
     loading.value = false
@@ -299,7 +300,18 @@ const removeCard = (slotIndex: number) => {
 
 onMounted(() => {
   loadCards()
+  window.addEventListener('keydown', handleKeydown)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+function handleKeydown(e: KeyboardEvent) {
+  if (showCardSelector.value && (e.key === 'Escape' || e.key === 'Esc' || e.key === 'x' || e.key === 'X')) {
+    closeCardSelector()
+  }
+}
 </script>
 
 <style scoped>

@@ -258,10 +258,12 @@ const loadCards = async () => {
   
   try {
     const response = await apiService.getCards()
-    cards.value = response.cards
-    categories.value = response.categories
+    cards.value = (response && response.data && response.data.cards) ? response.data.cards : []
+    categories.value = (response && response.data && response.data.categories) ? response.data.categories : []
   } catch (err) {
     error.value = '카드 정보를 불러오는데 실패했습니다.'
+    cards.value = []
+    categories.value = []
     console.error('Failed to load cards:', err)
   } finally {
     loading.value = false

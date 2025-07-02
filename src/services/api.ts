@@ -55,8 +55,8 @@ export interface ChatbotResponsesResponse {
   }
 }
 
-const API_BASE_URL = 'http://13.209.64.155:8000/'
-const ASK_API_URL = 'http://13.209.64.155:8000/ask'
+const API_BASE_URL = 'https://0a1c-13-209-64-155.ngrok-free.app'
+const ASK_API_URL = API_BASE_URL+'/ask'
 
 
 
@@ -97,7 +97,7 @@ export const apiService = {
   // 카드 상세 정보 조회 (더미)
   async getCardById(id: number): Promise<Card> {
     try {
-      const response = await fetch(`${API_BASE_URL}/cards.json`)
+      const response = await fetch(`${API_BASE_URL}/cards`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -113,20 +113,7 @@ export const apiService = {
     }
   },
 
-  // 챗봇 응답 조회 (더미)
-  async getChatbotResponseDummy(type: string): Promise<ChatbotResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/chatbot-responses.json`)
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      const data: ApiResponse<ChatbotResponsesResponse> = await response.json()
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return data.data.responses[type] || data.data.responses.unknown
-    } catch (error) {
-      handleApiError(error)
-    }
-  },
+
 
   // 실제 AI 챗봇 질문 (서버)
   async getChatbotResponse(question: string): Promise<ChatbotResponse> {

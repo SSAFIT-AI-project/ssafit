@@ -100,7 +100,7 @@
               </div>
             </div>
             <div class="card-actions">
-              <button class="btn btn-primary">자세히보기</button>
+              <button class="btn btn-primary" @click.stop="openDetailModal(card)">자세히보기</button>
             </div>
           </div>
         </div>
@@ -121,6 +121,23 @@
         </div>
       </div>
     </section>
+
+    <!-- 카드 상세 모달 -->
+    <div v-if="showDetailModal" class="modal-overlay" @click="closeDetailModal">
+      <div class="modal card p-4" @click.stop>
+        <div class="modal-header">
+          <h3 class="modal-title">{{ selectedCard?.name }}</h3>
+          <button class="modal-close" @click="closeDetailModal">×</button>
+        </div>
+        <div class="modal-content">
+          <div>카테고리: {{ selectedCard?.category }}</div>
+          <div>연회비: {{ selectedCard?.annualFee }}원</div>
+          <div>주요혜택: {{ selectedCard?.mainBenefit }}</div>
+          <div>인기도: {{ selectedCard?.popularity }}</div>
+          <div>아이콘: {{ selectedCard?.image }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -132,14 +149,29 @@ const popularCards = ref<PopularCard[]>([])
 const loading = ref(false)
 const error = ref('')
 
+const showDetailModal = ref(false)
+const selectedCard = ref<PopularCard | null>(null)
+
+const openDetailModal = (card: PopularCard) => {
+  selectedCard.value = card
+  showDetailModal.value = true
+}
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  selectedCard.value = null
+}
+
 const loadPopularCards = async () => {
   loading.value = true
   error.value = ''
   
   try {
-    popularCards.value = await apiService.getPopularCards()
+    const response = await apiService.getPopularCards()
+    popularCards.value = (response && response.data && response.data.popularCards) ? response.data.popularCards : []
+    console.log('popularCards:', popularCards.value)
   } catch (err) {
     error.value = '카드 정보를 불러오는데 실패했습니다.'
+    popularCards.value = []
     console.error('Failed to load popular cards:', err)
   } finally {
     loading.value = false
@@ -147,7 +179,7 @@ const loadPopularCards = async () => {
 }
 
 const selectCard = (card: PopularCard) => {
-  console.log('선택된 카드:', card)
+  openDetailModal(card)
 }
 
 onMounted(() => {
@@ -393,5 +425,65 @@ onMounted(() => {
     width: 250px;
     height: 150px;
   }
+}
+
+/* 모달 오버레이 */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 모달 본체 */
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  max-width: 400px;
+  width: 100%;
+  padding: 0;
+  position: relative;
+  animation: modal-fade-in 0.2s;
+}
+
+@keyframes modal-fade-in {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1428a0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+.modal-close:hover {
+  background: #f1f5f9;
+}
+
+.modal-content {
+  padding: 1.5rem;
 }
 </style> 
