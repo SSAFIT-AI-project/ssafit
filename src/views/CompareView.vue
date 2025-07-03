@@ -13,23 +13,31 @@
       <div class="card-selection card p-4 mb-4">
         <h3 class="section-title">비교할 카드 선택</h3>
         <div class="selection-grid">
+          <!-- 기존 비교 카드들 -->
           <div 
-            v-for="(slot, index) in comparisonSlots" 
-            :key="index"
-            class="selection-slot"
-            :class="{ 'has-card': slot.card }"
+            v-for="(card, index) in comparisonCards" 
+            :key="card.id"
+            class="selection-slot has-card"
           >
-            <div v-if="slot.card" class="selected-card">
+            <div class="selected-card">
               <div class="card-preview">
-                <div class="card-logo">{{ slot.card.image }}</div>
+                <div class="card-logo">{{ card.image }}</div>
                 <div class="card-info">
-                  <h4 class="card-name">{{ slot.card.name }}</h4>
-                  <div class="card-category">{{ slot.card.category }}</div>
+                  <h4 class="card-name">{{ card.name }}</h4>
+                  <div class="card-category">{{ card.category }}</div>
                 </div>
                 <button class="remove-btn" @click="removeCard(index)">×</button>
               </div>
             </div>
-            <div v-else class="empty-slot" @click="openCardSelector(index)">
+          </div>
+          
+          <!-- 빈 슬롯들 -->
+          <div 
+            v-for="index in (3 - comparisonCards.length)" 
+            :key="`empty-${index}`"
+            class="selection-slot"
+          >
+            <div class="empty-slot" @click="openCardSelector()">
               <div class="add-icon">+</div>
               <span>카드 추가</span>
             </div>
@@ -49,36 +57,36 @@
               <thead>
                 <tr>
                   <th>구분</th>
-                  <th v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    {{ slot.card.name }}
+                  <th v-for="card in comparisonCards" :key="card.id">
+                    {{ card.name }}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td class="feature-name">카테고리</td>
-                  <td v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    {{ slot.card.category }}
+                  <td v-for="card in comparisonCards" :key="card.id">
+                    {{ card.category }}
                   </td>
                 </tr>
                 <tr>
                   <td class="feature-name">연회비</td>
-                  <td v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    <span :class="getFeeClass(slot.card.annualFee)">
-                      {{ slot.card.annualFee === 0 ? '무료' : `${slot.card.annualFee.toLocaleString()}원` }}
+                  <td v-for="card in comparisonCards" :key="card.id">
+                    <span :class="getFeeClass(card.annualFee)">
+                      {{ card.annualFee === 0 ? '무료' : `${card.annualFee.toLocaleString()}원` }}
                     </span>
                   </td>
                 </tr>
                 <tr>
                   <td class="feature-name">적립률</td>
-                  <td v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    <span class="highlight">{{ slot.card.cashbackRate }}%</span>
+                  <td v-for="card in comparisonCards" :key="card.id">
+                    <span class="highlight">{{ card.cashbackRate }}%</span>
                   </td>
                 </tr>
                 <tr>
                   <td class="feature-name">발급조건</td>
-                  <td v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    {{ slot.card.requirement }}
+                  <td v-for="card in comparisonCards" :key="card.id">
+                    {{ card.requirement }}
                   </td>
                 </tr>
               </tbody>
@@ -94,16 +102,16 @@
               <thead>
                 <tr>
                   <th>혜택</th>
-                  <th v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    {{ slot.card.name }}
+                  <th v-for="card in comparisonCards" :key="card.id">
+                    {{ card.name }}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="benefitIndex in maxBenefits" :key="benefitIndex">
                   <td class="feature-name">혜택 {{ benefitIndex }}</td>
-                  <td v-for="slot in comparisonSlots" :key="slot.id" v-if="slot.card">
-                    {{ slot.card.benefits[benefitIndex - 1] || '-' }}
+                  <td v-for="card in comparisonCards" :key="card.id">
+                    {{ card.benefits[benefitIndex - 1] || '-' }}
                   </td>
                 </tr>
               </tbody>
@@ -143,7 +151,7 @@
         <p class="empty-description">
           최대 3개까지 카드를 선택하여 비교할 수 있습니다
         </p>
-        <button class="btn btn-primary" @click="openCardSelector(0)">
+        <button class="btn btn-primary" @click="openCardSelector()">
           첫 번째 카드 선택하기
         </button>
       </div>
@@ -198,56 +206,29 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { apiService, type Card } from '../services/api'
+import { useCompareStore } from '../stores/compare'
 
-interface ComparisonSlot {
-  id: number
-  card: Card | null
-}
+const compareStore = useCompareStore()
 
 const cards = ref<Card[]>([])
-const comparisonSlots = ref<ComparisonSlot[]>([
-  { id: 1, card: null },
-  { id: 2, card: null },
-  { id: 3, card: null }
-])
-
 const showCardSelector = ref(false)
 const selectedSlotIndex = ref(-1)
 const loading = ref(false)
 const error = ref('')
 
-const hasCardsToCompare = computed(() => {
-  return comparisonSlots.value.some(slot => slot.card !== null)
-})
+// 스토어에서 비교 카드들을 가져옴
+const comparisonCards = computed(() => compareStore.comparisonCards)
+
+const hasCardsToCompare = computed(() => compareStore.hasCardsToCompare)
 
 const availableCards = computed(() => {
-  const selectedCardIds = comparisonSlots.value
-    .map(slot => slot.card?.id)
-    .filter(id => id !== undefined)
+  const selectedCardIds = comparisonCards.value.map(card => card.id)
   return cards.value.filter(card => !selectedCardIds.includes(card.id))
 })
 
-const maxBenefits = computed(() => {
-  const max = Math.max(...comparisonSlots.value
-    .filter(slot => slot.card)
-    .map(slot => slot.card!.benefits.length))
-  return max || 0
-})
+const maxBenefits = computed(() => compareStore.maxBenefits)
 
-const bestCard = computed(() => {
-  const selectedCards = comparisonSlots.value
-    .filter(slot => slot.card)
-    .map(slot => slot.card!)
-  
-  if (selectedCards.length === 0) return null
-  
-  // 간단한 추천 로직: 적립률이 높고 연회비가 낮은 카드
-  return selectedCards.reduce((best, current) => {
-    const bestScore = best.cashbackRate / (best.annualFee + 1)
-    const currentScore = current.cashbackRate / (current.annualFee + 1)
-    return currentScore > bestScore ? current : best
-  })
-})
+const bestCard = computed(() => compareStore.bestCard)
 
 const getFeeClass = (annualFee: number) => {
   if (annualFee === 0) return 'fee-free'
@@ -277,25 +258,31 @@ const loadCards = async () => {
   }
 }
 
-const openCardSelector = (slotIndex: number) => {
-  selectedSlotIndex.value = slotIndex
+const openCardSelector = () => {
   showCardSelector.value = true
 }
 
 const closeCardSelector = () => {
   showCardSelector.value = false
-  selectedSlotIndex.value = -1
 }
 
 const selectCardForComparison = (card: Card) => {
-  if (selectedSlotIndex.value >= 0) {
-    comparisonSlots.value[selectedSlotIndex.value].card = card
+  const result = compareStore.addToCompare(card)
+  if (result.success) {
+    console.log(result.message)
+  } else {
+    console.log(result.message)
   }
   closeCardSelector()
 }
 
-const removeCard = (slotIndex: number) => {
-  comparisonSlots.value[slotIndex].card = null
+const removeCard = (index: number) => {
+  const result = compareStore.removeCardAtIndex(index)
+  if (result.success) {
+    console.log(result.message)
+  } else {
+    console.log(result.message)
+  }
 }
 
 onMounted(() => {

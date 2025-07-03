@@ -92,8 +92,12 @@
           </div>
           
           <div class="card-actions">
-            <button class="btn btn-primary" @click.stop="addToCompare(card)">
-              비교하기
+            <button 
+              class="btn" 
+              :class="compareStore.isInCompare(card.id) ? 'btn-secondary' : 'btn-primary'"
+              @click.stop="compareStore.isInCompare(card.id) ? removeFromCompare(card) : addToCompare(card)"
+            >
+              {{ compareStore.isInCompare(card.id) ? '취소' : '비교하기' }}
             </button>
             <button class="btn btn-secondary" @click.stop="showCardDetail(card)">
               자세히보기
@@ -184,10 +188,64 @@
           </div>
         </div>
         <div class="modal-actions">
-          <button class="btn btn-primary" @click="addToCompare(selectedCard)">
-            비교하기에 추가
+          <button 
+            class="btn" 
+            :class="selectedCard && compareStore.isInCompare(selectedCard.id) ? 'btn-secondary' : 'btn-primary'"
+            @click="selectedCard && compareStore.isInCompare(selectedCard.id) ? removeFromCompare(selectedCard) : addToCompare(selectedCard)"
+          >
+            {{ selectedCard && compareStore.isInCompare(selectedCard.id) ? '비교에서 제거' : '비교하기에 추가' }}
           </button>
           <button class="btn btn-secondary" @click="closeModal">
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카드 추가 확인 다이얼로그 -->
+    <div v-if="showAddConfirmDialog" class="modal-overlay" @click="closeAddConfirmDialog">
+      <div class="modal card p-4" @click.stop>
+        <div class="modal-header">
+          <h3 class="modal-title">카드 추가 완료</h3>
+          <button class="modal-close" @click="closeAddConfirmDialog">×</button>
+        </div>
+        <div class="modal-content">
+          <div class="confirm-message">
+            <div class="confirm-icon">✅</div>
+            <p><strong>{{ addedCardName }}</strong>이(가) 비교 목록에 추가되었습니다.</p>
+            <p>현재 비교 목록: {{ compareStore.compareCount }}/{{ compareStore.maxCards }}개</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" @click="goToCompare">
+            비교 페이지로 이동
+          </button>
+          <button class="btn btn-secondary" @click="closeAddConfirmDialog">
+            계속 둘러보기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 최대 개수 도달 다이얼로그 -->
+    <div v-if="showMaxReachedDialog" class="modal-overlay" @click="closeMaxReachedDialog">
+      <div class="modal card p-4" @click.stop>
+        <div class="modal-header">
+          <h3 class="modal-title">비교 목록 가득참</h3>
+          <button class="modal-close" @click="closeMaxReachedDialog">×</button>
+        </div>
+        <div class="modal-content">
+          <div class="confirm-message">
+            <div class="confirm-icon">⚠️</div>
+            <p>비교 목록이 최대 <strong>{{ compareStore.maxCards }}개</strong>로 가득 찼습니다.</p>
+            <p>새로운 카드를 추가하려면 기존 카드를 제거해주세요.</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" @click="goToCompare">
+            비교 페이지로 이동
+          </button>
+          <button class="btn btn-secondary" @click="closeMaxReachedDialog">
             닫기
           </button>
         </div>
@@ -198,7 +256,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiService, type Card } from '../services/api'
+import { useCompareStore } from '../stores/compare'
+
+const router = useRouter()
+const compareStore = useCompareStore()
 
 const cards = ref<Card[]>([])
 const categories = ref<string[]>([])
@@ -209,6 +272,9 @@ const currentPage = ref(1)
 const selectedCard = ref<Card | null>(null)
 const loading = ref(false)
 const error = ref('')
+const showAddConfirmDialog = ref(false)
+const addedCardName = ref('')
+const showMaxReachedDialog = ref(false)
 
 const filteredCards = computed(() => {
   let filtered = [...cards.value]
@@ -290,8 +356,44 @@ const closeModal = () => {
 }
 
 const addToCompare = (card: Card) => {
-  // 비교 기능 구현
-  console.log('비교에 추가:', card.name)
+  const result = compareStore.addToCompare(card)
+  if (result.success) {
+    // 성공 메시지 표시
+    console.log(result.message)
+    showAddConfirmDialog.value = true
+    addedCardName.value = card.name
+  } else {
+    // 에러 메시지 표시 - 최대 개수 도달 시 다이얼로그 표시
+    console.log(result.message)
+    if (result.message.includes('최대')) {
+      showMaxReachedDialog.value = true
+    }
+  }
+}
+
+const removeFromCompare = (card: Card) => {
+  const result = compareStore.removeFromCompare(card.id)
+  if (result.success) {
+    // 성공 메시지 표시 (선택사항)
+    console.log(result.message)
+  } else {
+    // 에러 메시지 표시 (선택사항)
+    console.log(result.message)
+  }
+}
+
+const goToCompare = () => {
+  closeAddConfirmDialog()
+  closeMaxReachedDialog()
+  router.push('/compare')
+}
+
+const closeAddConfirmDialog = () => {
+  showAddConfirmDialog.value = false
+}
+
+const closeMaxReachedDialog = () => {
+  showMaxReachedDialog.value = false
 }
 
 onMounted(() => {
@@ -626,9 +728,29 @@ onMounted(() => {
 .modal-actions {
   display: flex;
   gap: var(--spacing-md);
+  justify-content: flex-end;
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--surface);
+}
+
+.confirm-message {
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.confirm-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.confirm-message p {
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.confirm-message strong {
+  color: var(--primary);
 }
 
 @media (max-width: 768px) {

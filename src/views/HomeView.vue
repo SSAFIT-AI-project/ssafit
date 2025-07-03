@@ -126,15 +126,54 @@
     <div v-if="showDetailModal" class="modal-overlay" @click="closeDetailModal">
       <div class="modal card p-4" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">{{ selectedCard?.name }}</h3>
+          <h2 class="modal-title">{{ selectedCard?.name }}</h2>
           <button class="modal-close" @click="closeDetailModal">×</button>
         </div>
         <div class="modal-content">
-          <div>카테고리: {{ selectedCard?.category }}</div>
-          <div>연회비: {{ selectedCard?.annualFee }}원</div>
-          <div>주요혜택: {{ selectedCard?.mainBenefit }}</div>
-          <div>인기도: {{ selectedCard?.popularity }}</div>
-          <div>아이콘: {{ selectedCard?.image }}</div>
+          <div class="card-detail-section">
+            <h3>카드 정보</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">카테고리</span>
+                <span class="detail-value">{{ selectedCard?.category }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">연회비</span>
+                <span class="detail-value">{{ selectedCard?.annualFee === 0 ? '무료' : `${selectedCard?.annualFee.toLocaleString()}원` }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">적립률</span>
+                <span class="detail-value">{{ selectedCard?.cashbackRate }}%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">발급조건</span>
+                <span class="detail-value">{{ selectedCard?.requirement }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-detail-section">
+            <h3>카드 설명</h3>
+            <p class="card-description">{{ selectedCard?.description }}</p>
+          </div>
+          
+          <div class="card-detail-section">
+            <h3>주요 혜택</h3>
+            <ul class="benefit-list">
+              <li v-for="benefit in selectedCard?.benefits" :key="benefit">
+                {{ benefit }}
+              </li>
+            </ul>
+          </div>
+          
+          <div class="card-detail-section">
+            <h3>주요 특징</h3>
+            <div class="features-grid">
+              <div v-for="feature in selectedCard?.features" :key="feature" class="feature-tag">
+                {{ feature }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -143,19 +182,29 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiService, type PopularCard } from '../services/api'
+import { apiService, type Card } from '../services/api'
 
-const popularCards = ref<PopularCard[]>([])
+const popularCards = ref<Card[]>([])
 const loading = ref(false)
 const error = ref('')
 
 const showDetailModal = ref(false)
-const selectedCard = ref<PopularCard | null>(null)
+const selectedCard = ref<Card | null>(null)
 
-const openDetailModal = (card: PopularCard) => {
-  selectedCard.value = card
-  showDetailModal.value = true
+const openDetailModal = async (card: Card) => {
+  // 카드 상세 정보를 가져옴
+  try {
+    const detailedCard = await apiService.getCardById(card.id)
+    selectedCard.value = detailedCard
+    showDetailModal.value = true
+  } catch (err) {
+    console.error('Failed to load card details:', err)
+    // 상세 정보 로드 실패 시 기본 정보 사용
+    selectedCard.value = card
+    showDetailModal.value = true
+  }
 }
+
 const closeDetailModal = () => {
   showDetailModal.value = false
   selectedCard.value = null
@@ -178,7 +227,7 @@ const loadPopularCards = async () => {
   }
 }
 
-const selectCard = (card: PopularCard) => {
+const selectCard = (card: Card) => {
   openDetailModal(card)
 }
 
@@ -443,7 +492,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  max-width: 400px;
+  max-width: 600px;
   width: 100%;
   padding: 0;
   position: relative;
@@ -485,5 +534,74 @@ onMounted(() => {
 
 .modal-content {
   padding: 1.5rem;
+}
+
+.card-detail-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.card-detail-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.card-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.benefit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.benefit-list li {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--surface);
+  color: var(--text-primary);
+}
+
+.benefit-list li:last-child {
+  border-bottom: none;
+}
+
+.features-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.feature-tag {
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 </style> 
