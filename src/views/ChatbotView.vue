@@ -323,29 +323,10 @@ function formatMessage(text: string) {
   return marked.parse(text)
 }
 
-// 대화 기록 초기화 및 새로운 대화 시작
+// 대화 기록 초기화 및 페이지 새로고침
 const clearConversationAndRestart = () => {
   clearConversation()
-  messages.value = []
-  userInput.value = ''
-  
-  // 초기 환영 메시지 다시 표시
-  const welcomeMessage = '안녕하세요! 카드 추천을 도와드릴게요. 어떤 카드를 찾고 계신가요?'
-  messages.value.push({
-    type: 'bot',
-    text: welcomeMessage,
-    suggestions: [
-      '연회비가 낮은 카드 추천해줘',
-      '주유 할인 카드 추천해줘',
-      '대중교통 할인 카드 추천해줘',
-      '온라인 쇼핑 할인 카드 추천해줘'
-    ]
-  })
-  
-  // 초기 환영 메시지를 대화 기록에 추가
-  addToConversation('assistant', welcomeMessage)
-  
-  scrollToBottom()
+  window.location.reload()
 }
 </script>
 
