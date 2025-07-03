@@ -19,6 +19,13 @@
               {{ isTyping ? '입력 중...' : '온라인' }}
             </div>
           </div>
+          <button 
+            class="clear-conversation-btn"
+            @click="clearConversationAndRestart"
+            title="새로운 대화 시작"
+          >
+            🔄 새로고침
+          </button>
         </div>
 
         <!-- 채팅 영역 -->
@@ -132,10 +139,50 @@ interface Message {
   }>
 }
 
+interface ConversationMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 const messages = ref<Message[]>([])
 const userInput = ref('')
 const isTyping = ref(false)
 const messagesContainer = ref<HTMLElement>()
+
+// 세션스토리지 키
+const CONVERSATION_STORAGE_KEY = 'chatbot-conversation'
+
+// 대화 기록을 세션스토리지에서 로드
+const loadConversation = (): ConversationMessage[] => {
+  try {
+    const stored = sessionStorage.getItem(CONVERSATION_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch (error) {
+    console.error('Failed to load conversation from sessionStorage:', error)
+    return []
+  }
+}
+
+// 대화 기록을 세션스토리지에 저장
+const saveConversation = (conversation: ConversationMessage[]) => {
+  try {
+    sessionStorage.setItem(CONVERSATION_STORAGE_KEY, JSON.stringify(conversation))
+  } catch (error) {
+    console.error('Failed to save conversation to sessionStorage:', error)
+  }
+}
+
+// 대화 기록에 메시지 추가
+const addToConversation = (role: 'user' | 'assistant', content: string) => {
+  const conversation = loadConversation()
+  conversation.push({ role, content })
+  saveConversation(conversation)
+}
+
+// 세션스토리지 초기화 (새로운 대화 시작)
+const clearConversation = () => {
+  sessionStorage.removeItem(CONVERSATION_STORAGE_KEY)
+}
 
 const quickMessages = [
   '일상생활 카드 추천해줘',
@@ -156,7 +203,7 @@ const scrollToBottom = async () => {
 const sendMessage = async (text: string) => {
   if (!text.trim() || isTyping.value) return
 
-  // 사용자 메시지 추가
+  // 사용자 메시지 추가 (UI 표시용)
   messages.value.push({
     type: 'user',
     text: text.trim()
@@ -180,8 +227,9 @@ const processBotResponse = async (userMessage: string) => {
   await scrollToBottom()
 
   try {
-    // API 호출 - 사용자 메시지를 직접 전달
-    const response: ChatbotResponse = await apiService.getChatbotResponse(userMessage)
+    // 현재 질문을 제외한 이전 대화 기록을 가져와서 API 호출
+    const conversation = loadConversation()
+    const response: ChatbotResponse = await apiService.getChatbotResponse(userMessage, conversation)
 
     // 봇 메시지 추가
     messages.value.push({
@@ -191,13 +239,23 @@ const processBotResponse = async (userMessage: string) => {
       recommendations: response.recommendations
     })
 
+    // AI 응답 후에 사용자 메시지와 AI 응답을 모두 대화 기록에 추가
+    addToConversation('user', userMessage)
+    addToConversation('assistant', response.message)
+
   } catch (error) {
     console.error('Failed to get bot response:', error)
+    const errorMessage = '죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해주세요.'
+    
     messages.value.push({
       type: 'bot',
-      text: '죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해주세요.',
+      text: errorMessage,
       suggestions: ['일상생활 카드 추천해줘', '교통비 절약 카드 찾아줘']
     })
+
+    // 에러 발생 시에도 사용자 메시지와 에러 메시지를 대화 기록에 추가
+    addToConversation('user', userMessage)
+    addToConversation('assistant', errorMessage)
   } finally {
     isTyping.value = false
     await scrollToBottom()
@@ -217,9 +275,65 @@ watch(messages, () => {
 
 // 초기 메시지
 onMounted(async () => {
+  // 세션스토리지에 대화 기록이 없을 때만 초기 메시지 추가
+  const existingConversation = loadConversation()
+  if (existingConversation.length === 0) {
+    const welcomeMessage = '안녕하세요! 카드 추천을 도와드릴게요. 어떤 카드를 찾고 계신가요?'
+    
+    messages.value.push({
+      type: 'bot',
+      text: welcomeMessage,
+      suggestions: [
+        '연회비가 낮은 카드 추천해줘',
+        '주유 할인 카드 추천해줘',
+        '대중교통 할인 카드 추천해줘',
+        '온라인 쇼핑 할인 카드 추천해줘'
+      ]
+    })
+
+    // 초기 환영 메시지를 대화 기록에 추가
+    addToConversation('assistant', welcomeMessage)
+  } else {
+    // 기존 대화 기록이 있으면 UI에 표시
+    existingConversation.forEach((msg, index) => {
+      if (msg.role === 'assistant') {
+        // 마지막 메시지에만 suggestions 추가
+        const isLastMessage = index === existingConversation.length - 1
+        messages.value.push({
+          type: 'bot',
+          text: msg.content,
+          suggestions: isLastMessage ? [
+            '연회비가 낮은 카드 추천해줘',
+            '주유 할인 카드 추천해줘',
+            '대중교통 할인 카드 추천해줘',
+            '온라인 쇼핑 할인 카드 추천해줘'
+          ] : undefined
+        })
+      } else if (msg.role === 'user') {
+        messages.value.push({
+          type: 'user',
+          text: msg.content
+        })
+      }
+    })
+  }
+})
+
+function formatMessage(text: string) {
+  return marked.parse(text)
+}
+
+// 대화 기록 초기화 및 새로운 대화 시작
+const clearConversationAndRestart = () => {
+  clearConversation()
+  messages.value = []
+  userInput.value = ''
+  
+  // 초기 환영 메시지 다시 표시
+  const welcomeMessage = '안녕하세요! 카드 추천을 도와드릴게요. 어떤 카드를 찾고 계신가요?'
   messages.value.push({
     type: 'bot',
-    text: '안녕하세요! 카드 추천을 도와드릴게요. 어떤 카드를 찾고 계신가요?',
+    text: welcomeMessage,
     suggestions: [
       '연회비가 낮은 카드 추천해줘',
       '주유 할인 카드 추천해줘',
@@ -227,10 +341,11 @@ onMounted(async () => {
       '온라인 쇼핑 할인 카드 추천해줘'
     ]
   })
-})
-
-function formatMessage(text: string) {
-  return marked.parse(text)
+  
+  // 초기 환영 메시지를 대화 기록에 추가
+  addToConversation('assistant', welcomeMessage)
+  
+  scrollToBottom()
 }
 </script>
 
@@ -276,6 +391,10 @@ function formatMessage(text: string) {
   flex-shrink: 0;
 }
 
+.chatbot-info {
+  flex: 1;
+}
+
 .chatbot-name {
   font-size: 1.25rem;
   font-weight: 600;
@@ -289,6 +408,25 @@ function formatMessage(text: string) {
 
 .chatbot-status.typing {
   color: #ffd700;
+}
+
+.clear-conversation-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--samsung-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.clear-conversation-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .chat-messages {

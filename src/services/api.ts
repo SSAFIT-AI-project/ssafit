@@ -49,6 +49,11 @@ export interface ChatbotResponse {
   }>
 }
 
+export interface ConversationMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 export interface ChatbotResponsesResponse {
   responses: {
     [key: string]: ChatbotResponse
@@ -77,7 +82,7 @@ export const apiService = {
       }
       return await response.json()
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -90,7 +95,7 @@ export const apiService = {
       }
       return await response.json()
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -116,15 +121,20 @@ export const apiService = {
 
 
   // 실제 AI 챗봇 질문 (서버)
-  async getChatbotResponse(question: string): Promise<ChatbotResponse> {
+  async getChatbotResponse(question: string, conversation: ConversationMessage[] = []): Promise<ChatbotResponse> {
     try {
+      const requestBody = {
+        question,
+        conversation
+      }
+
       const response = await fetch(ASK_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'accept': 'application/json'
         },
-        body: JSON.stringify({ question })
+        body: JSON.stringify(requestBody)
       })
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
       const data = await response.json()
@@ -138,7 +148,7 @@ export const apiService = {
         ]
       }
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
